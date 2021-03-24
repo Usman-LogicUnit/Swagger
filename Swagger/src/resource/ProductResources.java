@@ -29,7 +29,7 @@ public class ProductResources {
 	ProductDao productDao = new ProductDao();
 
 	@POST
-	@ApiOperation(value = "Create Product", notes = "Create product with its varient", response = ProductSpecification.class)
+	@ApiOperation(value = "Create Product", notes = "Create product along with its varient if there are any varients", response = ProductSpecification.class)
 	public ProductSpecification NewProduct(DataObject dataObject) {
 		return productDao.createProductWithOrWithoutVarients(dataObject);
 	}
@@ -75,7 +75,7 @@ public class ProductResources {
 	@ApiOperation(value="Search by barcode",
 	notes="search product by barcode",
 	response=BarCode.class)
-	public BarCode SearchBarCode(@PathParam("barcode") String searchBarCode) {
+	public ProductSpecification SearchBarCode(@PathParam("barcode") String searchBarCode) {
 		return productDao.SearchBarCode(searchBarCode);
 	}
 }
