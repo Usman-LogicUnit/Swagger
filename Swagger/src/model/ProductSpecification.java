@@ -1,14 +1,18 @@
 package model;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlElement;
+
 public class ProductSpecification {
-	String name, description, brand, isBundle, POID, productNumber, href, id;
-	List<UnitsOfMeasure> unitsOfMeasure = new ArrayList<>();
-	List<ProductOfferingRef> productOfferings = new ArrayList<>();
-	List<ProductSpecCharacteristic> productSpecCharacteristics = new ArrayList<>();
-	List<BarCode> availableBarcodes = new ArrayList<>();
+	String name, description, brand, POID, productNumber, href, id;
+	List<UnitsOfMeasure> unitsOfMeasure;
+	List<ProductOfferingRef> productOfferings;
+	List<ProductSpecCharacteristic> productSpecCharacteristics;
+	List<BarCode> availableBarcodes;
+	@XmlElement(name = "isBundle")
+	boolean isBundle;
+	List<BundledProductSpecification> bundledProductSpecifications;
 
 	public ProductSpecification() {
 		super();
@@ -71,14 +75,6 @@ public class ProductSpecification {
 		this.brand = brand;
 	}
 
-	public String getIsBundle() {
-		return isBundle;
-	}
-
-	public void setIsBundle(String isBundle) {
-		this.isBundle = isBundle;
-	}
-
 	public List<UnitsOfMeasure> getUnitsOfMeasure() {
 		return unitsOfMeasure;
 	}
@@ -111,11 +107,31 @@ public class ProductSpecification {
 		this.availableBarcodes = availableBarcodes;
 	}
 
+	@XmlElement(name = "isBundle")
+	public boolean isBundle() {
+		return isBundle;
+	}
+
+	@XmlElement(name = "isBundle")
+	public void setBundle(boolean isBundle) {
+		this.isBundle = isBundle;
+	}
+
+	public List<BundledProductSpecification> getBundledProductSpecifications() {
+		return bundledProductSpecifications;
+	}
+
+	public void setBundledProductSpecifications(List<BundledProductSpecification> bundledProductSpecifications) {
+		this.bundledProductSpecifications = bundledProductSpecifications;
+	}
+
 	@Override
 	public String toString() {
-		return "ProductSpecification [name=" + name + ", description=" + description + ", brand=" + brand
-				+ ", isBundle=" + isBundle + ", POID=" + POID + ", productNumber=" + productNumber + ", href=" + href
-				+ ", id=" + id + ", unitsOfMeasure=" + unitsOfMeasure + ", productOfferings=" + productOfferings + "]";
+		return "ProductSpecification [name=" + name + ", description=" + description + ", brand=" + brand + ", POID="
+				+ POID + ", productNumber=" + productNumber + ", href=" + href + ", id=" + id + ", unitsOfMeasure="
+				+ unitsOfMeasure + ", productOfferings=" + productOfferings + ", productSpecCharacteristics="
+				+ productSpecCharacteristics + ", availableBarcodes=" + availableBarcodes + ", isBundle=" + isBundle
+				+ ", bundledProductSpecifications=" + bundledProductSpecifications + "]";
 	}
 
 }

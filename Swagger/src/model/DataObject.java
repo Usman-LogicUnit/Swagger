@@ -1,21 +1,25 @@
 package model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlElement;
 
 public class DataObject {
-	String description, isBundle, name, number;
+	String description, name, number;
 	List<UnitsOfMeasure> unitsOfMeasure;
 	List<ProductSpecCharacteristic> productSpecCharacteristics;
 	String offeringName, offeringDescription;
 	String offeringStartDate, offeringEndDate;
 	String conversionFactor;
 	String priceName, priceDescription, priceType;
-	float taxIncludedAmountValue, dutyFreeAmountValue, taxRate, percentage;
+	float taxIncludedAmountValue, dutyFreeAmountValue, taxRate, percentage, price;
 	@XmlElement(name = "Category_Id")
 	String Category_Id;
 	List<BarCode> barCodes;
+	@XmlElement(name = "isBundle")
+	boolean isBundle;
+	List<BundledProductSpecification> bundledProductSpecifications = new ArrayList<>();
 
 	public DataObject() {
 		super();
@@ -30,11 +34,13 @@ public class DataObject {
 		this.description = description;
 	}
 
-	public String getIsBundle() {
+	@XmlElement(name = "isBundle")
+	public boolean isBundle() {
 		return isBundle;
 	}
 
-	public void setIsBundle(String isBundle) {
+	@XmlElement(name = "isBundle")
+	public void setBundle(boolean isBundle) {
 		this.isBundle = isBundle;
 	}
 
@@ -165,6 +171,14 @@ public class DataObject {
 	public void setPercentage(float percentage) {
 		this.percentage = percentage;
 	}
+	
+	public float getPrice() {
+		return price;
+	}
+
+	public void setPrice(float price) {
+		this.price = price;
+	}
 
 	@XmlElement(name = "Category_Id")
 	public String getCategory_Id() {
@@ -182,6 +196,14 @@ public class DataObject {
 
 	public void setBarCodes(List<BarCode> barCodes) {
 		this.barCodes = barCodes;
+	}
+
+	public List<BundledProductSpecification> getBundledProductSpecifications() {
+		return bundledProductSpecifications;
+	}
+
+	public void setBundledProductSpecifications(List<BundledProductSpecification> bundledProductSpecifications) {
+		this.bundledProductSpecifications = bundledProductSpecifications;
 	}
 
 }

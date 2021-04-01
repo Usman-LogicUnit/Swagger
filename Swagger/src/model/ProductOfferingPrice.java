@@ -106,8 +106,8 @@ public class ProductOfferingPrice {
 	public String toString() {
 		return "ProductOfferingPrice [POID=" + POID + ", id=" + id + ", description=" + description + ", name=" + name
 				+ ", priceType=" + priceType + ", taxIncludedAmountValue=" + taxIncludedAmountValue
-				+ ", dutyFreeAmountValue=" + dutyFreeAmountValue + ", taxRate=" + taxRate + ", ProductOffering_Id="
-				+ ProductOffering_Id + "]";
+				+ ", dutyFreeAmountValue=" + dutyFreeAmountValue + ", taxRate=" + taxRate + ", percentage=" + percentage
+				+ ", ProductOffering_Id=" + ProductOffering_Id + ", unitOfMeasure=" + unitOfMeasure + "]";
 	}
 
 }

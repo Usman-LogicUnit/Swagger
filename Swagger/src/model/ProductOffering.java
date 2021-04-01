@@ -1,6 +1,5 @@
 package model;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlElement;
@@ -8,11 +7,12 @@ import javax.xml.bind.annotation.XmlElement;
 public class ProductOffering {
 	String POID, id, name, description;
 	TimePeriod validFor;
-	List<ProductSpecificationRef> productSpecifications = new ArrayList<>();
-	List<ProductOfferingPrice> productOfferingPrices = new ArrayList<>();
-	List<ProductSpecCharacteristicRef> productSpecCharacteristicRefs = new ArrayList<>();
+	List<ProductSpecificationRef> productSpecifications;
+	List<ProductOfferingPrice> productOfferingPrices;
+	List<ProductSpecCharacteristicRef> productSpecCharacteristicRefs;
 	@XmlElement(name = "Category_Id")
 	String Category_Id;
+	boolean isBundle;
 
 	public ProductOffering() {
 		super();
@@ -82,13 +82,23 @@ public class ProductOffering {
 	public void setProductSpecCharacteristicRefs(List<ProductSpecCharacteristicRef> productSpecCharacteristicRefs) {
 		this.productSpecCharacteristicRefs = productSpecCharacteristicRefs;
 	}
+
 	@XmlElement(name = "Category_Id")
 	public String getCategory_Id() {
 		return Category_Id;
 	}
+
 	@XmlElement(name = "Category_Id")
 	public void setCategory_Id(String category_Id) {
 		Category_Id = category_Id;
+	}
+
+	public boolean isBundle() {
+		return isBundle;
+	}
+
+	public void setBundle(boolean isBundle) {
+		this.isBundle = isBundle;
 	}
 
 	@Override
