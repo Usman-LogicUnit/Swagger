@@ -3,11 +3,11 @@ package model;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProductSpecCharacteristicRef {
+public class OptionRef {
 	String POID, id, name, description;
-	List<ProductSpecCharValueRef> productSpecCharValues = new ArrayList<>();
+	List<OptionValueRef> productSpecCharValues = new ArrayList<>();
 
-	public ProductSpecCharacteristicRef() {
+	public OptionRef() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
@@ -44,11 +44,11 @@ public class ProductSpecCharacteristicRef {
 		this.description = description;
 	}
 
-	public List<ProductSpecCharValueRef> getProductSpecCharValues() {
+	public List<OptionValueRef> getProductSpecCharValues() {
 		return productSpecCharValues;
 	}
 
-	public void setProductSpecCharValues(List<ProductSpecCharValueRef> productSpecCharValues) {
+	public void setProductSpecCharValues(List<OptionValueRef> productSpecCharValues) {
 		this.productSpecCharValues = productSpecCharValues;
 	}
 

@@ -5,14 +5,14 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 
 public class ProductSpecification {
-	String name, description, brand, POID, productNumber, href, id;
+	String name, description, POID, id, productNumber, lifeCycleStatus;
 	List<UnitsOfMeasure> unitsOfMeasure;
 	List<ProductOfferingRef> productOfferings;
-	List<ProductSpecCharacteristic> productSpecCharacteristics;
+	List<Option> productSpecCharacteristics;
 	List<BarCode> availableBarcodes;
 	@XmlElement(name = "isBundle")
 	boolean isBundle;
-	List<BundledProductSpecification> bundledProductSpecifications;
+	List<BundledProduct> bundledProductSpecifications;
 
 	public ProductSpecification() {
 		super();
@@ -35,28 +35,12 @@ public class ProductSpecification {
 		this.id = id;
 	}
 
-	public String getProductNumber() {
-		return productNumber;
-	}
-
-	public void setProductNumber(String productNumber) {
-		this.productNumber = productNumber;
-	}
-
 	public String getName() {
 		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public String getHref() {
-		return href;
-	}
-
-	public void setHref(String href) {
-		this.href = href;
 	}
 
 	public String getDescription() {
@@ -67,12 +51,12 @@ public class ProductSpecification {
 		this.description = description;
 	}
 
-	public String getBrand() {
-		return brand;
+	public String getProductNumber() {
+		return productNumber;
 	}
 
-	public void setBrand(String brand) {
-		this.brand = brand;
+	public void setProductNumber(String productNumber) {
+		this.productNumber = productNumber;
 	}
 
 	public List<UnitsOfMeasure> getUnitsOfMeasure() {
@@ -91,11 +75,11 @@ public class ProductSpecification {
 		this.productOfferings = productOfferings;
 	}
 
-	public List<ProductSpecCharacteristic> getProductSpecCharacteristics() {
+	public List<Option> getProductSpecCharacteristics() {
 		return productSpecCharacteristics;
 	}
 
-	public void setProductSpecCharacteristics(List<ProductSpecCharacteristic> productSpecCharacteristics) {
+	public void setProductSpecCharacteristics(List<Option> productSpecCharacteristics) {
 		this.productSpecCharacteristics = productSpecCharacteristics;
 	}
 
@@ -105,6 +89,14 @@ public class ProductSpecification {
 
 	public void setAvailableBarcodes(List<BarCode> availableBarcodes) {
 		this.availableBarcodes = availableBarcodes;
+	}
+
+	public String getLifeCycleStatus() {
+		return lifeCycleStatus;
+	}
+
+	public void setLifeCycleStatus(String lifeCycleStatus) {
+		this.lifeCycleStatus = lifeCycleStatus;
 	}
 
 	@XmlElement(name = "isBundle")
@@ -117,21 +109,21 @@ public class ProductSpecification {
 		this.isBundle = isBundle;
 	}
 
-	public List<BundledProductSpecification> getBundledProductSpecifications() {
+	public List<BundledProduct> getBundledProductSpecifications() {
 		return bundledProductSpecifications;
 	}
 
-	public void setBundledProductSpecifications(List<BundledProductSpecification> bundledProductSpecifications) {
+	public void setBundledProductSpecifications(List<BundledProduct> bundledProductSpecifications) {
 		this.bundledProductSpecifications = bundledProductSpecifications;
 	}
 
 	@Override
 	public String toString() {
-		return "ProductSpecification [name=" + name + ", description=" + description + ", brand=" + brand + ", POID="
-				+ POID + ", productNumber=" + productNumber + ", href=" + href + ", id=" + id + ", unitsOfMeasure="
-				+ unitsOfMeasure + ", productOfferings=" + productOfferings + ", productSpecCharacteristics="
-				+ productSpecCharacteristics + ", availableBarcodes=" + availableBarcodes + ", isBundle=" + isBundle
-				+ ", bundledProductSpecifications=" + bundledProductSpecifications + "]";
+		return "ProductSpecification [name=" + name + ", description=" + description + ", POID=" + POID + ", id=" + id
+				+ ", unitsOfMeasure=" + unitsOfMeasure + ", productOfferings=" + productOfferings
+				+ ", productSpecCharacteristics=" + productSpecCharacteristics + ", availableBarcodes="
+				+ availableBarcodes + ", isBundle=" + isBundle + ", bundledProductSpecifications="
+				+ bundledProductSpecifications + "]";
 	}
 
 }

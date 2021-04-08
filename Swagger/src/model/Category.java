@@ -4,10 +4,13 @@ import java.util.List;
 
 import javax.xml.bind.annotation.XmlElement;
 
+import io.swagger.annotations.ApiModelProperty;
+
 public class Category {
 	String id, parentId, name, description;
 	@XmlElement(name = "Catalog_Id")
 	String Catalog_Id;
+	@ApiModelProperty(position = 1, hidden=true, notes = "offerings in category")
 	List<ProductOfferingRef> productOfferings;
 
 	public Category() {

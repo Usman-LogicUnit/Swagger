@@ -5,14 +5,14 @@ import java.util.List;
 
 import javax.xml.bind.annotation.XmlElement;
 
-public class ProductSpecCharacteristic {
+public class Option {
 	String POID, id, name, description;
 	@XmlElement(name = "ProductSpecification_Id")
 	String ProductSpecification_Id;
 
-	List<ProductSpecCharValue> productSpecCharValues = new ArrayList<>();
+	List<OptionValue> productSpecCharValues = new ArrayList<>();
 
-	public ProductSpecCharacteristic() {
+	public Option() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
@@ -59,11 +59,11 @@ public class ProductSpecCharacteristic {
 		ProductSpecification_Id = productSpecification_Id;
 	}
 
-	public List<ProductSpecCharValue> getProductSpecCharValues() {
+	public List<OptionValue> getProductSpecCharValues() {
 		return productSpecCharValues;
 	}
 
-	public void setProductSpecCharValues(List<ProductSpecCharValue> productSpecCharValues) {
+	public void setProductSpecCharValues(List<OptionValue> productSpecCharValues) {
 		this.productSpecCharValues = productSpecCharValues;
 	}
 

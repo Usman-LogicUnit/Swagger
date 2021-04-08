@@ -3,7 +3,7 @@ package model;
 import javax.xml.bind.annotation.XmlElement;
 
 public class ProductOfferingPrice {
-	String POID, id, description, name, priceType;
+	String POID, id;
 	float taxIncludedAmountValue, dutyFreeAmountValue, taxRate, percentage;
 	@XmlElement(name = "ProductOffering_Id")
 	String ProductOffering_Id;
@@ -28,30 +28,6 @@ public class ProductOfferingPrice {
 
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getPriceType() {
-		return priceType;
-	}
-
-	public void setPriceType(String priceType) {
-		this.priceType = priceType;
 	}
 
 	public float getTaxIncludedAmountValue() {
@@ -104,10 +80,10 @@ public class ProductOfferingPrice {
 
 	@Override
 	public String toString() {
-		return "ProductOfferingPrice [POID=" + POID + ", id=" + id + ", description=" + description + ", name=" + name
-				+ ", priceType=" + priceType + ", taxIncludedAmountValue=" + taxIncludedAmountValue
-				+ ", dutyFreeAmountValue=" + dutyFreeAmountValue + ", taxRate=" + taxRate + ", percentage=" + percentage
-				+ ", ProductOffering_Id=" + ProductOffering_Id + ", unitOfMeasure=" + unitOfMeasure + "]";
+		return "ProductOfferingPrice [POID=" + POID + ", id=" + id + ", taxIncludedAmountValue="
+				+ taxIncludedAmountValue + ", dutyFreeAmountValue=" + dutyFreeAmountValue + ", taxRate=" + taxRate
+				+ ", percentage=" + percentage + ", ProductOffering_Id=" + ProductOffering_Id + ", unitOfMeasure="
+				+ unitOfMeasure + "]";
 	}
 
 }

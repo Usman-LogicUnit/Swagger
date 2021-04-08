@@ -3,7 +3,7 @@ package model;
 import java.util.List;
 
 public class ProductDetailWithPrice {
-	String productId, name, description;
+	String productId, name, description, productNumber;
 	List<UnitsOfMeasure> unitsOfmeasure;
 	float price;
 
@@ -42,6 +42,14 @@ public class ProductDetailWithPrice {
 
 	public void setPrice(float price) {
 		this.price = price;
+	}
+
+	public String getProductNumber() {
+		return productNumber;
+	}
+
+	public void setProductNumber(String productNumber) {
+		this.productNumber = productNumber;
 	}
 
 	public List<UnitsOfMeasure> getUnitsOfmeasure() {

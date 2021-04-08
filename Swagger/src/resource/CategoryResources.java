@@ -23,14 +23,14 @@ public class CategoryResources {
 	CategoryDao categoryDao = new CategoryDao();
 
 	@POST
-	@ApiOperation(value = "create a category", notes = "create a category under a catalog", response = Category.class)
+	@ApiOperation(value = "create a category", notes = "create a category under a catalog")
 	public Response AddCategory(Category category) {
 		return categoryDao.newCategory(category);
 	}
 
 	@GET
 	@Path("/{categoryId}")
-	@ApiOperation(value = "category details", notes = "category and its all details", response = Category.class, responseContainer = "List")
+	@ApiOperation(value = "category details", notes = "category and its all details", responseContainer = "List")
 	public Response getCategory(@PathParam("categoryId") String categoryId) {
 		return categoryDao.getCategories(categoryId);
 	}

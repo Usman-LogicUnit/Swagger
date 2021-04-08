@@ -2,13 +2,13 @@ package model;
 
 import javax.xml.bind.annotation.XmlElement;
 
-public class ProductSpecCharValueRef {
+public class OptionValueRef {
 	String POID, id, value;
 
 	@XmlElement(name = "ProductSpecCharacteristicRef_Id")
 	String ProductSpecCharacteristicRef_Id;
 
-	public ProductSpecCharValueRef() {
+	public OptionValueRef() {
 		super();
 		// TODO Auto-generated constructor stub
 	}

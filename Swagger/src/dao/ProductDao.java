@@ -19,17 +19,15 @@ import org.glassfish.jersey.client.ClientConfig;
 import com.google.common.collect.Lists;
 
 import model.BarCode;
-import model.DataObject;
-import model.ProductDetailWithPrice;
-import model.ProductWithOffering;
+import model.Product;
 import model.ProductOffering;
 import model.ProductOfferingPrice;
-import model.ProductSpecCharValue;
-import model.ProductSpecCharValueRef;
-import model.ProductSpecCharacteristic;
-import model.ProductSpecCharacteristicRef;
+import model.OptionValue;
+import model.OptionValueRef;
+import model.Option;
+import model.OptionRef;
 import model.ProductSpecification;
-import model.ProductSpecificationRef;
+import model.ProductRef;
 import model.Quantity;
 import model.TimePeriod;
 import model.UnitsOfMeasure;
@@ -44,10 +42,11 @@ public class ProductDao {
 	ClientConfig clientConfig = new ClientConfig();
 	Client client = ClientBuilder.newClient(clientConfig);
 
+	// completed OK
 	public Response getProduct(String productSpecification_Id) {
 
 		// instance initialization
-		ProductWithOffering productdetails = new ProductWithOffering();
+		Product product = new Product();
 
 //		First fetch product details then fetch its all varients
 		System.out.println("Requesting...\n\n");
@@ -60,34 +59,35 @@ public class ProductDao {
 		Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer usman");
 		Response response = invocationBuilder.get();
-		List<ProductSpecification> productSpecifications = response
+		List<ProductSpecification> productSpecification = response
 				.readEntity(new GenericType<List<ProductSpecification>>() {
 				});
-		if (productSpecifications == null) {
-			String message = "Unable to fetch all products";
+		if (productSpecification == null) {
+			String message = "Unable to fetch product";
 			System.out.println("\n\t\tRequest End");
 			System.out.println("*************************************************");
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(message).build();
-		} else if (productSpecifications.size() == 0) {
+		} else if (productSpecification.size() == 0) {
 			String message = "No products in Product Catalog";
 			System.out.println("\n\t\tRequest End");
 			System.out.println("*************************************************");
 			return Response.status(Response.Status.ACCEPTED).entity(message).build();
 		} else {
-			productdetails.setProductSpecification(productSpecifications.get(0));
-			int numberOfOfferings = productdetails.getProductSpecification().getProductOfferings().size();
-			System.out.println("number of varients product has: " + numberOfOfferings + "\n");
-		}
+			ProductSpecification tempProductSpecification = productSpecification.get(0);
+			product.setName(tempProductSpecification.getName());
+			product.setDescription(tempProductSpecification.getDescription());
+			product.setPOID(tempProductSpecification.getPOID());
+			product.setId(tempProductSpecification.getId());
+			product.setImageURL(tempProductSpecification.getProductNumber());
+			product.setBundle(tempProductSpecification.isBundle());
+			product.setUnitsOfMeasure(tempProductSpecification.getUnitsOfMeasure());
+			product.setProductSpecCharacteristics(tempProductSpecification.getProductSpecCharacteristics());
+			product.setBarCodes(tempProductSpecification.getAvailableBarcodes());
+			product.setStatus(tempProductSpecification.getLifeCycleStatus());
+			product.setBundledProductSpecifications(tempProductSpecification.getBundledProductSpecifications());
 
-		String productOfferingId = null;
+			String productOfferingId = tempProductSpecification.getProductOfferings().get(0).getPOID();
 
-		List<ProductOffering> allOfferings = new ArrayList<>();
-		ProductOffering productOfferingObject = null;
-		System.out.println("---------------------------------------");
-		for (int i = 0; i < productdetails.getProductSpecification().getProductOfferings().size(); i++) {
-			productOfferingId = productdetails.getProductSpecification().getProductOfferings().get(i).getPOID();
-
-			// Fetch offering of the fetched product
 			WebTarget productOfferingTarget = client.target(
 					"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
 					.path("/productOffering").path(productOfferingId);
@@ -97,32 +97,35 @@ public class ProductDao {
 			List<ProductOffering> productOfferings = productOfferingResponse
 					.readEntity(new GenericType<List<ProductOffering>>() {
 					});
-			if (productOfferings.size() == 0) {
-				System.out.println("Unable to fetch varient of Id: " + productOfferingId);
-			} else {
-				System.out.println(
-						"Successfully fetched varient number " + (i + 1) + " of varient Id: " + productOfferingId);
-				productOfferingObject = new ProductOffering();
-				productOfferingObject = productOfferings.get(0);
-				allOfferings.add(productOfferingObject);
-			}
-		}
-		System.out.println("---------------------------------------");
 
-		productdetails.setProductOffering(allOfferings);
-		System.out.println("Successfully Fetched Product and Its details");
+			if (productOfferings == null) {
+				String message = "Unable to fetch product";
+				System.out.println("\n\t\tRequest End");
+				System.out.println("*************************************************");
+				return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(message).build();
+			}
+			ProductOffering tempProductOffering = productOfferings.get(0);
+			product.setCategory_Id(tempProductOffering.getCategory_Id());
+			product.setStartDate(tempProductOffering.getValidFor().getStartDate());
+			product.setEndDate(tempProductOffering.getValidFor().getEndDate());
+			ProductOfferingPrice tempProductOfferingPrice = tempProductOffering.getProductOfferingPrices().get(0);
+			product.setPrice(tempProductOfferingPrice.getDutyFreeAmountValue());
+			product.setTaxRate(tempProductOfferingPrice.getTaxRate());
+
+		}
+		System.out.println("Successfully Fetched");
 		System.out.println("\n\t\tRequest End");
 		System.out.println("*************************************************");
 
-		return Response.status(Response.Status.OK).entity(productdetails).build();
+		return Response.status(Response.Status.OK).entity(product).build();
 	}
 
-	public Response createProductWithOrWithoutVarients(DataObject dataObject) {
+	public Response createProductWithOrWithoutVarients(Product dataObject) {
 
 		/// Creating Instances of Classes
 		ProductSpecification productSpecification = new ProductSpecification();
 		ProductOffering productOffering = new ProductOffering();
-		ProductSpecificationRef productSpecificationRef = new ProductSpecificationRef();
+		ProductRef productSpecificationRef = new ProductRef();
 
 		if (dataObject == null) {
 			System.out.println("in here");
@@ -134,8 +137,8 @@ public class ProductDao {
 			System.out.println("*************************************************");
 			return Response.status(Response.Status.OK).entity(message).build();
 		}
-		if (dataObject.getName() == null || dataObject.getDescription() == null
-				|| dataObject.getOfferingStartDate() == null || dataObject.getOfferingEndDate() == null) {
+		if (dataObject.getName() == null || dataObject.getDescription() == null || dataObject.getStartDate() == null
+				|| dataObject.getEndDate() == null) {
 			String message = "please provide necessary details\n provide name,description,offeringStartDate,OfferingEndDate";
 			System.out.println("Error while creating product");
 			System.out.println("\n\t\tRequest End");
@@ -152,37 +155,21 @@ public class ProductDao {
 		if (dataObject.getDescription() != null)
 			productSpecification.setDescription(dataObject.getDescription());
 
-		if (dataObject.getNumber() != null)
-			productSpecification.setProductNumber(dataObject.getNumber());
-
 		if (dataObject.getBarCodes() != null)
 			productSpecification.setAvailableBarcodes(dataObject.getBarCodes());
 
-		if (dataObject.getOfferingName() != null)
-			productOffering.setName(dataObject.getOfferingName());
-
-		if (dataObject.getOfferingDescription() != null)
-			productOffering.setDescription(dataObject.getOfferingDescription());
-
 		productOffering.setValidFor(new TimePeriod());
 
-		if (dataObject.getOfferingStartDate() != null)
-			productOffering.getValidFor().setStartDate(dataObject.getOfferingStartDate());
+		if (dataObject.getStartDate() != null)
+			productOffering.getValidFor().setStartDate(dataObject.getStartDate());
 
-		if (dataObject.getOfferingEndDate() != null)
-			productOffering.getValidFor().setEndDate(dataObject.getOfferingEndDate());
+		if (dataObject.getEndDate() != null)
+			productOffering.getValidFor().setEndDate(dataObject.getEndDate());
 
-		productOffering.setProductSpecifications(new ArrayList<ProductSpecificationRef>());
+		productOffering.setProductSpecifications(new ArrayList<ProductRef>());
 
 		if (productSpecification.getName() != null)
 			productSpecificationRef.setName(productSpecification.getName());
-
-		if (productSpecification.getDescription() != null)
-			productSpecificationRef.setDescription(productSpecification.getDescription());
-
-		if (productSpecification.getProductNumber() != null)
-			productSpecificationRef.setProductSerialNumber(productSpecification.getProductNumber());
-
 		// productSpecificationRef.setConversionFactor(dataObject.getConversionFactor());
 		productOffering.getProductSpecifications().add(productSpecificationRef);
 		productOffering.setProductOfferingPrices(new ArrayList<ProductOfferingPrice>());
@@ -266,26 +253,12 @@ public class ProductDao {
 				Quantity quantity = new Quantity();
 
 				// Setting default unit of Measure to Product Offering Prices
-				if (dataObject.getPriceDescription() != null)
-					productOfferingPrice.setDescription(dataObject.getPriceDescription());
-
-				if (dataObject.getPriceName() != null)
-					productOfferingPrice.setName(dataObject.getPriceName());
-
-				if (dataObject.getPriceType() != null)
-					productOfferingPrice.setPriceType(dataObject.getPriceType());
-
-				if (dataObject.getDutyFreeAmountValue() > 0)
-					productOfferingPrice.setDutyFreeAmountValue(dataObject.getDutyFreeAmountValue());
 
 				if (dataObject.getPrice() > 0)
 					productOfferingPrice.setTaxIncludedAmountValue(dataObject.getPrice());
 
 				if (dataObject.getTaxRate() > 0)
 					productOfferingPrice.setTaxRate(dataObject.getTaxRate());
-
-				if (dataObject.getPercentage() > 0)
-					productOfferingPrice.setPercentage(dataObject.getPercentage());
 
 				quantity.setNumber(1);
 				quantity.setUnitOfMeasure_Id(defaultUnitOfMeasure.getPOID());
@@ -296,15 +269,13 @@ public class ProductDao {
 				// Check for Product if it has some default Characteristics and value
 
 				if (productSpecification.getProductSpecCharacteristics().size() > 0) {
-					List<ProductSpecCharacteristic> productSpecCharacteristicList = productSpecification
-							.getProductSpecCharacteristics();
+					List<Option> productSpecCharacteristicList = productSpecification.getProductSpecCharacteristics();
 					List<List<String>> superlist = new ArrayList<>();
-					for (ProductSpecCharacteristic productSpecCharacteristic : productSpecCharacteristicList) {
+					for (Option productSpecCharacteristic : productSpecCharacteristicList) {
 
 						List<String> values = new ArrayList<>();
 
-						for (ProductSpecCharValue productCharValue : productSpecCharacteristic
-								.getProductSpecCharValues()) {
+						for (OptionValue productCharValue : productSpecCharacteristic.getProductSpecCharValues()) {
 							values.add(productSpecCharacteristic.getName() + ":" + productCharValue.getValue() + "="
 									+ productSpecCharacteristic.getPOID() + "-" + productCharValue.getPOID());
 						}
@@ -318,8 +289,8 @@ public class ProductDao {
 					test = Lists.cartesianProduct(superlist);
 					System.out.print("Number of Possible Varients" + test.size());
 
-					List<ProductSpecCharacteristicRef> productSpecCharacteristicRef = null;
-					List<ProductSpecCharValueRef> productSpecCharValueRef = null;
+					List<OptionRef> productSpecCharacteristicRef = null;
+					List<OptionValueRef> productSpecCharValueRef = null;
 
 					int looprunning = 0;
 					for (int combinations = 0; combinations < test.size(); combinations++) {
@@ -329,8 +300,8 @@ public class ProductDao {
 						List<String> values = new ArrayList<>();
 						values = test.get(combinations);
 						for (int val = 0; val < productSpecCharacteristicList.size(); val++) {
-							ProductSpecCharacteristicRef productSpecCharacteristicRefObject = new ProductSpecCharacteristicRef();
-							ProductSpecCharValueRef productSpecCharValueRefObject = new ProductSpecCharValueRef();
+							OptionRef productSpecCharacteristicRefObject = new OptionRef();
+							OptionValueRef productSpecCharValueRefObject = new OptionValueRef();
 							productSpecCharValueRef = new ArrayList<>();
 
 							System.out.println("new values" + values.get(val));
@@ -395,8 +366,10 @@ public class ProductDao {
 		}
 	}
 
-	public Response getAllProducts() {
-
+	// completed OK
+	public Response getAllProducts(int startingIndex, int size, String status) {
+		List<Product> products = new ArrayList<>();
+		Product product;
 		System.out.println("Requesting...\n\n");
 		WebTarget webTarget = client.target(
 				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
@@ -407,7 +380,18 @@ public class ProductDao {
 		List<ProductSpecification> productSpecifications = null;
 		productSpecifications = response.readEntity(new GenericType<List<ProductSpecification>>() {
 		});
-		if (productSpecifications == null) {
+		System.out.println("product Specifications: " + productSpecifications.size());
+		WebTarget webTargetForAllProductOfferings = client.target(
+				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
+				.path("/productOfferings");
+		Invocation.Builder invocationBuilderForAllOfferings = webTargetForAllProductOfferings
+				.request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer usman");
+		Response allOfferingsResponse = invocationBuilderForAllOfferings.get();
+		List<ProductOffering> productOfferings = null;
+		productOfferings = allOfferingsResponse.readEntity(new GenericType<List<ProductOffering>>() {
+		});
+
+		if (productSpecifications == null || productOfferings == null) {
 			String message = "Unable to fetch all products";
 			System.out.println("\n\t\tRequest End");
 			System.out.println("*************************************************");
@@ -418,14 +402,70 @@ public class ProductDao {
 			System.out.println("*************************************************");
 			return Response.status(Response.Status.ACCEPTED).entity(message).build();
 		} else {
+			if (startingIndex > productSpecifications.size()) {
+				System.out.println("Please provide valid Starting endpoint");
+				System.out.println("\n\t\tRequest End");
+				System.out.println("*************************************************");
+				return Response.status(Response.Status.BAD_REQUEST).entity("index size out of bound").build();
+			}
+			List<Product> paginatedList;
+
+			for (ProductSpecification productSpecification : productSpecifications) {
+				System.out.println("name:" + productSpecification.getName());
+				product = new Product();
+				product.setName(productSpecification.getName());
+				product.setDescription(productSpecification.getDescription());
+				product.setPOID(productSpecification.getPOID());
+				product.setId(productSpecification.getId());
+				product.setImageURL(productSpecification.getProductNumber());
+				product.setBundle(productSpecification.isBundle());
+				product.setUnitsOfMeasure(productSpecification.getUnitsOfMeasure());
+				product.setProductSpecCharacteristics(productSpecification.getProductSpecCharacteristics());
+				product.setBarCodes(productSpecification.getAvailableBarcodes());
+				product.setBundledProductSpecifications(productSpecification.getBundledProductSpecifications());
+				product.setStatus(productSpecification.getLifeCycleStatus());
+				String productOfferingId = productSpecification.getProductOfferings().get(0).getPOID();
+
+				for (ProductOffering productOffering : productOfferings) {
+					if (productOfferingId.equals(productOffering.getPOID())) {
+
+						product.setCategory_Id(productOffering.getCategory_Id());
+						product.setStartDate(productOffering.getValidFor().getStartDate());
+						product.setEndDate(productOffering.getValidFor().getEndDate());
+						ProductOfferingPrice tempProductOfferingPrice = new ProductOfferingPrice();
+						tempProductOfferingPrice = productOffering.getProductOfferingPrices().get(0);
+						product.setPrice(tempProductOfferingPrice.getDutyFreeAmountValue());
+						product.setTaxRate(tempProductOfferingPrice.getTaxRate());
+						System.out.println("Price: " + tempProductOfferingPrice.getDutyFreeAmountValue());
+						products.add(product);
+						break;
+					}
+				}
+			}
+			if (startingIndex > 0 && size > 0) {
+				startingIndex--;
+				if (startingIndex + size > productSpecifications.size()) {
+					int itemToRemove = (startingIndex + size) - productSpecifications.size();
+					size = size - itemToRemove;
+				}
+				paginatedList = products.subList(startingIndex, size + startingIndex);
+				System.out.println("size of list: " + paginatedList.size());
+				System.out.println("Successfully Fetched Products");
+				System.out.println("\n\t\tRequest End");
+				System.out.println("*************************************************");
+				return Response.status(200).entity(new GenericEntity<List<Product>>(paginatedList) {
+				}).build();
+			}
+			System.out.println("Number of Products: " + products.size());
 			System.out.println("Successfully Fetched all products");
 			System.out.println("\n\t\tRequest End");
 			System.out.println("*************************************************");
-			return Response.status(200).entity(new GenericEntity<List<ProductSpecification>>(productSpecifications) {
+			return Response.status(200).entity(new GenericEntity<List<Product>>(products) {
 			}).build();
 		}
 	}
 
+	// Completed OK
 	public Response getUnitOfMeasuresOfProduct(String productId) {
 		System.out.println("Requesting...\n\n");
 		WebTarget webTarget = client.target(
@@ -458,6 +498,7 @@ public class ProductDao {
 		}
 	}
 
+	// completed OK
 	public Response getDefaultUnitOfMeasure(String productId) {
 		System.out.println("Requesting...\n\n");
 		WebTarget webTarget = client.target(
@@ -496,16 +537,10 @@ public class ProductDao {
 		}
 	}
 
+	// completed OK
 	public Response searchByName(String name) {
-		if (name == null) {
-			String message = "Name cannot be empty";
-			System.out.println("\n\t\tRequest End");
-			System.out.println("*************************************************");
-			return Response.status(Response.Status.BAD_REQUEST).entity(message)
-					.header("Access-Control-Allow-Origin", "*").header("Access-Control-Allow-Methods", "GET").build();
-		}
 		System.out.println("Requesting...\n\n");
-		System.out.println("Searching... " + "\"" + name + "\"" + " in products");
+		System.out.println("Searching... product by name " + "\"" + name + "\"" + " in products");
 		WebTarget webTarget = client.target(
 				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
 				.path("/productSpecifications");
@@ -526,31 +561,76 @@ public class ProductDao {
 			System.out.println("*************************************************");
 			return Response.status(Response.Status.ACCEPTED).entity(message).build();
 		} else {
-			List<ProductSpecification> productSpecificationsByName = new ArrayList<>();
+			List<Product> products = new ArrayList<>();
+			Product product = new Product();
 			for (ProductSpecification productSpecification : productSpecifications) {
 				if (name.equals(productSpecification.getName())) {
-					System.out.println("Product founded in record " + "\"" + productSpecification.getName() + "\"");
-					productSpecificationsByName.add(productSpecification);
+					product.setName(productSpecification.getName());
+					product.setDescription(productSpecification.getDescription());
+					product.setPOID(productSpecification.getPOID());
+					product.setId(productSpecification.getId());
+					product.setBundle(productSpecification.isBundle());
+					product.setImageURL(productSpecification.getProductNumber());
+					product.setUnitsOfMeasure(productSpecification.getUnitsOfMeasure());
+					product.setProductSpecCharacteristics(productSpecification.getProductSpecCharacteristics());
+					product.setBarCodes(productSpecification.getAvailableBarcodes());
+					product.setStatus(productSpecification.getLifeCycleStatus());
+					product.setBundledProductSpecifications(productSpecification.getBundledProductSpecifications());
+
+					String productOfferingId = productSpecification.getProductOfferings().get(0).getPOID();
+
+					WebTarget productOfferingTarget = client.target(
+							"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
+							.path("/productOffering").path(productOfferingId);
+					Invocation.Builder productOfferingBuilder = productOfferingTarget
+							.request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer usman");
+					Response productOfferingResponse = productOfferingBuilder.get();
+					List<ProductOffering> productOfferings = productOfferingResponse
+							.readEntity(new GenericType<List<ProductOffering>>() {
+							});
+
+					if (productOfferings == null) {
+						String message = "Unable to fetch product";
+						System.out.println("\n\t\tRequest End");
+						System.out.println("*************************************************");
+						return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(message).build();
+					}
+					ProductOffering tempProductOffering = productOfferings.get(0);
+					product.setCategory_Id(tempProductOffering.getCategory_Id());
+					product.setStartDate(tempProductOffering.getValidFor().getStartDate());
+					product.setEndDate(tempProductOffering.getValidFor().getEndDate());
+					ProductOfferingPrice tempProductOfferingPrice = tempProductOffering.getProductOfferingPrices()
+							.get(0);
+					product.setPrice(tempProductOfferingPrice.getDutyFreeAmountValue());
+					product.setTaxRate(tempProductOfferingPrice.getTaxRate());
+					products.add(product);
 				}
 			}
+			if (products.size() == 0) {
+				String message = "No product exists with name: " + name;
+				System.out.println("No product exists for name");
+				System.out.println("\n\t\tRequest End");
+				System.out.println("*************************************************");
+				return Response.status(Response.Status.NOT_FOUND).entity(message).build();
+			}
+			System.out.println("Successfully search product form name");
 			System.out.println("\n\t\tRequest End");
 			System.out.println("*************************************************");
-			if (productSpecificationsByName.size() > 0) {
-				return Response.status(Response.Status.OK)
-						.entity(new GenericEntity<List<ProductSpecification>>(productSpecificationsByName) {
-						}).build();
-			} else {
-				String message = "Product not found in record: " + "\" " + name + " \"" + "\n Search again";
-				return Response.status(Response.Status.NOT_FOUND).entity(message)
-
-						.build();
-			}
+			return Response.status(Response.Status.OK).entity(new GenericEntity<List<Product>>(products) {
+			}).build();
 		}
 	}
 
+	// completed OK
 	public Response getAllBarCodes(String productId) {
 		System.out.println("Requesting...\n\n");
-		System.out.println("Searching... " + "\"" + productId + " \"" + "barcodes in products");
+		System.out.println("Searching... " + "\"" + productId + " \"" + "barcodes in product");
+
+		/*
+		 * Get product details then check if the product has barcodes then it return the
+		 * list of barcodes else it return empty list
+		 */
+
 		WebTarget webTarget = client.target(
 				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
 				.path("/productSpecification").path(productId).path("/barCodes");
@@ -578,37 +658,84 @@ public class ProductDao {
 		}).build();
 	}
 
-	public Response SearchBarCode(String barcodeCode) {
+	// completed OK
+	public Response searchByBarCode(String barcodeCode) {
 		System.out.println("Requesting...\n\n");
-		System.out.println("Searching... barcode " + "\"" + barcodeCode + "\"" + " in products");
-		ProductSpecification product = new ProductSpecification();
+		System.out.println("Searching... product by barcode: " + "\"" + barcodeCode + "\"");
+		Product product = new Product();
+
+		/*
+		 * API to search product by bar code
+		 * 
+		 * Search product by name First fetch all the product then compare products with
+		 * name if name matches then add product to list
+		 */
 		WebTarget webTarget = client.target(
 				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
 				.path("/productSpecifications");
 		Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer usman");
 		Response response = invocationBuilder.get();
-		List<ProductSpecification> products = response.readEntity(new GenericType<List<ProductSpecification>>() {
-		});
-		if (products == null) {
+		List<ProductSpecification> productSpecifications = response
+				.readEntity(new GenericType<List<ProductSpecification>>() {
+				});
+		if (productSpecifications == null) {
 			String message = "Unable to fetch all products";
 			System.out.println("\n\t\tRequest End");
 			System.out.println("*************************************************");
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(message).build();
-		} else if (products.size() == 0) {
+		} else if (productSpecifications.size() == 0) {
 			String message = "No products in Product Catalog";
 			System.out.println("\n\t\tRequest End");
 			System.out.println("*************************************************");
 			return Response.status(Response.Status.ACCEPTED).entity(message).build();
 		} else {
-			for (ProductSpecification productSpecification : products) {
+			for (ProductSpecification productSpecification : productSpecifications) {
 				for (BarCode barcode : productSpecification.getAvailableBarcodes()) {
 					if (barcodeCode.equals(barcode.getCode())) {
 						System.out.println("barcode matched product found");
 						System.out.println("Successfully search product form barcode");
 						System.out.println("\n\t\tRequest End");
 						System.out.println("*************************************************");
-						product = productSpecification;
+						product.setName(productSpecification.getName());
+						product.setDescription(productSpecification.getDescription());
+						product.setPOID(productSpecification.getPOID());
+						product.setId(productSpecification.getId());
+						product.setImageURL(productSpecification.getProductNumber());
+						product.setBundle(productSpecification.isBundle());
+						product.setUnitsOfMeasure(productSpecification.getUnitsOfMeasure());
+						product.setProductSpecCharacteristics(productSpecification.getProductSpecCharacteristics());
+						product.setBarCodes(productSpecification.getAvailableBarcodes());
+						product.setStatus(productSpecification.getLifeCycleStatus());
+						product.setBundledProductSpecifications(productSpecification.getBundledProductSpecifications());
+
+						String productOfferingId = productSpecification.getProductOfferings().get(0).getPOID();
+
+						WebTarget productOfferingTarget = client.target(
+								"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
+								.path("/productOffering").path(productOfferingId);
+						Invocation.Builder productOfferingBuilder = productOfferingTarget
+								.request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer usman");
+						Response productOfferingResponse = productOfferingBuilder.get();
+						List<ProductOffering> productOfferings = productOfferingResponse
+								.readEntity(new GenericType<List<ProductOffering>>() {
+								});
+
+						if (productOfferings == null) {
+							String message = "Unable to fetch product";
+							System.out.println("\n\t\tRequest End");
+							System.out.println("*************************************************");
+							return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(message).build();
+						}
+						ProductOffering tempProductOffering = productOfferings.get(0);
+						product.setCategory_Id(tempProductOffering.getCategory_Id());
+						product.setStartDate(tempProductOffering.getValidFor().getStartDate());
+						product.setEndDate(tempProductOffering.getValidFor().getEndDate());
+						ProductOfferingPrice tempProductOfferingPrice = tempProductOffering.getProductOfferingPrices()
+								.get(0);
+						product.setPrice(tempProductOfferingPrice.getDutyFreeAmountValue());
+						product.setTaxRate(tempProductOfferingPrice.getTaxRate());
+
 						return Response.status(Response.Status.OK).entity(product).build();
 					}
 				}
@@ -618,188 +745,120 @@ public class ProductDao {
 		}
 	}
 
-	public Response allproducts() {
+	// completed OK
+	public Response updateProduct(Product product, String productId) {
+		System.out.println("product:" + product + "\n\n\n");
 		System.out.println("Requesting...\n\n");
-		WebTarget webTarget = client.target(
-				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
-				.path("/productSpecifications");
-		Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON)
-				.header(HttpHeaders.AUTHORIZATION, "Bearer usman");
-		Response response = invocationBuilder.get();
-		System.out.println(response.toString());
-		List<ProductSpecification> productSpecifications = null;
-		productSpecifications = response.readEntity(new GenericType<List<ProductSpecification>>() {
-		});
-		if (productSpecifications == null) {
-			String message = "Unable to fetch all products";
-			System.out.println("\n\t\tRequest End");
-			System.out.println("*************************************************");
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(message).build();
-		} else if (productSpecifications.size() == 0) {
-			String message = "No products in Product Catalog";
-			System.out.println("\n\t\tRequest End");
-			System.out.println("*************************************************");
-			return Response.status(Response.Status.ACCEPTED).entity(message).build();
-		} else {
-			List<ProductDetailWithPrice> products = new ArrayList<>();
-			ProductDetailWithPrice product = null;
-			for (ProductSpecification productSpecification : productSpecifications) {
-				product = new ProductDetailWithPrice();
-				product.setProductId(productSpecification.getPOID());
-				product.setName(productSpecification.getName());
-				product.setDescription(productSpecification.getDescription());
-				product.setUnitsOfmeasure(productSpecification.getUnitsOfMeasure());
-				products.add(product);
-			}
-			System.out.println("Successfully Fetched all products");
-			System.out.println("\n\t\tRequest End");
-			System.out.println("*************************************************");
-			return Response.status(200).entity(new GenericEntity<List<ProductDetailWithPrice>>(products) {
-			}).build();
+
+		/*
+		 * API to update product details Update product details like name description
+		 * price etc
+		 */
+
+		if (product.getName() != null || product.getDescription() != null || product.getImageURL() != null
+				|| product.getUnitsOfMeasure() != null || product.getBarCodes() != null
+				|| product.getStatus() != null) {
+			updateProductSpecification(product, productId);
 		}
-	}
-
-	public Response allproductsWithPrice() {
-		System.out.println("Requesting...\n\n");
-		WebTarget webTarget = client.target(
-				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
-				.path("/productSpecifications");
-		Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON)
-				.header(HttpHeaders.AUTHORIZATION, "Bearer usman");
-		Response response = invocationBuilder.get();
-		List<ProductSpecification> productSpecifications = null;
-		productSpecifications = response.readEntity(new GenericType<List<ProductSpecification>>() {
-		});
-		if (productSpecifications == null) {
-			String message = "Unable to fetch all products";
-			System.out.println("\n\t\tRequest End");
-			System.out.println("*************************************************");
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(message).build();
-		} else if (productSpecifications.size() == 0) {
-			String message = "No products in Product Catalog";
-			System.out.println("\n\t\tRequest End");
-			System.out.println("*************************************************");
-			return Response.status(Response.Status.ACCEPTED).entity(message).build();
-		} else {
-			List<ProductDetailWithPrice> product = new ArrayList<>();
-			ProductDetailWithPrice products = null;
-			String offeringId;
-			List<ProductOfferingPrice> productOfferingPrice = new ArrayList<>();
-			for (ProductSpecification productSpecification : productSpecifications) {
-				products = new ProductDetailWithPrice();
-				products.setName(productSpecification.getName());
-				products.setDescription(productSpecification.getDescription());
-				products.setProductId(productSpecification.getPOID());
-				products.setUnitsOfmeasure(productSpecification.getUnitsOfMeasure());
-
-				offeringId = productSpecification.getProductOfferings().get(0).getPOID();
-				System.out.println(
-						"offering id for price:\t" + productSpecification.getProductOfferings().get(0).getPOID());
-				WebTarget webTargetforPrice = client.target(
-						"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService/productOfferingPrice?productOffering_Id="
-								+ offeringId);
-				Invocation.Builder invocationBuilderforPrice = webTargetforPrice.request(MediaType.APPLICATION_JSON)
-						.header(HttpHeaders.AUTHORIZATION, "Bearer usman");
-				Response responseForPrice = invocationBuilderforPrice.get();
-				productOfferingPrice = responseForPrice.readEntity(new GenericType<List<ProductOfferingPrice>>() {
-				});
-				System.out.println("price\t" + productOfferingPrice.get(0).getTaxIncludedAmountValue());
-				products.setPrice(productOfferingPrice.get(0).getTaxIncludedAmountValue());
-				product.add(products);
-			}
-			System.out.println("Successfully Fetched all products");
-			System.out.println("\n\t\tRequest End");
-			System.out.println("*************************************************");
-
-			return Response.status(200).entity(new GenericEntity<List<ProductDetailWithPrice>>(product) {
-			}).build();
-		}
-
-	}
-
-	public Response updateProduct(DataObject dataObject, String productId) {
-		ProductSpecification productSpecification = new ProductSpecification();
-		System.out.println("Requesting...\n\n");
-		if (dataObject.getName() != null || dataObject.getDescription() != null) {
-			System.out.println("Updating name and description ...\n");
-			if (dataObject.getName() != null)
-				productSpecification.setName(dataObject.getName());
-
-			if (dataObject.getDescription() != null)
-				productSpecification.setDescription(dataObject.getDescription());
-
-			WebTarget webTargetUpdateProduct = client.target(
-					"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService/productSpecification")
-					.path(productId);
-			Invocation.Builder invocationBuilder = webTargetUpdateProduct.request(MediaType.APPLICATION_JSON)
-					.header(HttpHeaders.AUTHORIZATION, "Bearer usman");
-			invocationBuilder.put(Entity.entity(productSpecification, MediaType.APPLICATION_JSON));
-
-		}
-		if (dataObject.getPrice() > 0) {
-			System.out.println("Updating Price ...\n");
-			WebTarget webTargetforProductOffering = client.target(
-					"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
-					.path("/productSpecification").path(productId).path("productOfferings");
-			Invocation.Builder invocationBuilderForOffering = webTargetforProductOffering
-					.request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer usman");
-			Response responseForOffering = invocationBuilderForOffering.get();
-			List<ProductOffering> productOfferings = responseForOffering
-					.readEntity(new GenericType<List<ProductOffering>>() {
-					});
-			if (productOfferings != null) {
-				ProductOffering productOffering = new ProductOffering();
-				List<ProductOfferingPrice> productOfferingPrices = new ArrayList<>();
-				ProductOfferingPrice productOfferingPrice = new ProductOfferingPrice();
-
-				String productOfferingPOID = productOfferings.get(0).getPOID();
-				String productOfferingPricePOID = productOfferings.get(0).getProductOfferingPrices().get(0).getPOID();
-
-				productOfferingPrice.setPOID(productOfferingPricePOID);
-				productOfferingPrice.setTaxIncludedAmountValue(dataObject.getPrice());
-				productOfferingPrices.add(productOfferingPrice);
-				productOffering.setProductOfferingPrices(productOfferingPrices);
-
-				WebTarget webTargetUpdatePrice = client.target(
-						"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
-						.path("productOffering").path(productOfferingPOID);
-				Invocation.Builder invocationBuilderUpdatePrice = webTargetUpdatePrice
-						.request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer usman");
-				invocationBuilderUpdatePrice.put(Entity.entity(productOffering, MediaType.APPLICATION_JSON));
-			}
+		if (product.getPrice() > 0 || product.getTaxRate() > 0) {
+			updateProductOffering(product, productId);
 		}
 		String message = "Successfully updated product";
 		return Response.status(200).entity(message).build();
 	}
 
-	public Response searchById(String productSpecification_Id) {
-		System.out.println("Requesting...\n\n");
+	// completed OK
+	public void updateProductSpecification(Product product, String productId) {
+		ProductSpecification productSpecification = new ProductSpecification();
+		System.out.println("Updating Product Specification");
 
-		System.out.println("Fetching Product Detail Of Product Id: " + productSpecification_Id);
+		if (product.getName() != null)
+			productSpecification.setName(product.getName());
 
-		WebTarget webTarget = client.target(
-				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
-				.path("/productSpecification").path(productSpecification_Id);
-		Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON)
+		if (product.getDescription() != null)
+			productSpecification.setDescription(product.getDescription());
+
+		if (product.getImageURL() != null) {
+			String imageURL = product.getImageURL();
+			String[] splitOnColon = imageURL.split(":");
+			String imageURLwithoutColon = splitOnColon[1];
+			System.out.println("yeaaaahhhhh!!! jogarh" + imageURLwithoutColon);
+			productSpecification.setProductNumber(imageURLwithoutColon);
+		}
+
+		if (product.getUnitsOfMeasure() != null) {
+			productSpecification.setUnitsOfMeasure(product.getUnitsOfMeasure());
+		}
+
+		if (product.getBarCodes() != null) {
+			productSpecification.setAvailableBarcodes(product.getBarCodes());
+		}
+		if (product.getStatus() != null)
+			product.setStatus(productSpecification.getLifeCycleStatus());
+		System.out.println("Product Specification: " + productSpecification.toString() + "\n\n\n");
+		System.out.println("Updating product Specification: ...\n\n");
+		WebTarget webTargetUpdateProduct = client.target(
+				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService/productSpecification")
+				.path(productId);
+		Invocation.Builder invocationBuilder = webTargetUpdateProduct.request(MediaType.APPLICATION_JSON)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer usman");
-		Response response = invocationBuilder.get();
-		List<ProductSpecification> productSpecifications = response
-				.readEntity(new GenericType<List<ProductSpecification>>() {
+		invocationBuilder.put(Entity.entity(productSpecification, MediaType.APPLICATION_JSON));
+
+	}
+
+	// completed OK
+	public void updateProductOffering(Product product, String productId) {
+		System.out.println("Updating productOffering: ...\n\n");
+		WebTarget webTargetforProductOffering = client.target(
+				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
+				.path("/productSpecification").path(productId).path("productOfferings");
+		Invocation.Builder invocationBuilderForOffering = webTargetforProductOffering
+				.request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer usman");
+		Response responseForOffering = invocationBuilderForOffering.get();
+		List<ProductOffering> productOfferings = responseForOffering
+				.readEntity(new GenericType<List<ProductOffering>>() {
 				});
-		if (productSpecifications == null) {
-			String message = "Unable to fetch product";
-			System.out.println("\n\t\tRequest End");
-			System.out.println("*************************************************");
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(message).build();
-		} else if (productSpecifications.size() == 0) {
-			String message = "No product found";
-			System.out.println("\n\t\tRequest End");
-			System.out.println("*************************************************");
-			return Response.status(Response.Status.NOT_FOUND).entity(message).build();
-		} else {
-			ProductSpecification product = new ProductSpecification();
-			product = productSpecifications.get(0);
-			return Response.status(Response.Status.OK).entity(product).build();
+
+		if (productOfferings != null) {
+			ProductOffering productOffering = new ProductOffering();
+			List<ProductOfferingPrice> productOfferingPrices = new ArrayList<>();
+			ProductOfferingPrice productOfferingPrice = new ProductOfferingPrice();
+
+			String productOfferingPOID = productOfferings.get(0).getPOID();
+			String productOfferingPricePOID = productOfferings.get(0).getProductOfferingPrices().get(0).getPOID();
+
+			productOfferingPrice.setPOID(productOfferingPricePOID);
+			productOfferingPrice.setDutyFreeAmountValue(product.getPrice());
+			productOfferingPrice.setTaxRate(product.getTaxRate());
+			productOfferingPrices.add(productOfferingPrice);
+			productOffering.setProductOfferingPrices(productOfferingPrices);
+
+			System.out.println("Testing " + productOffering.toString());
+			WebTarget webTargetUpdatePrice = client.target(
+					"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
+					.path("productOffering").path(productOfferingPOID);
+			Invocation.Builder invocationBuilderUpdatePrice = webTargetUpdatePrice.request(MediaType.APPLICATION_JSON)
+					.header(HttpHeaders.AUTHORIZATION, "Bearer usman");
+			invocationBuilderUpdatePrice.put(Entity.entity(productOffering, MediaType.APPLICATION_JSON));
 		}
 	}
+
+	// completed OK
+	public Response deleteProduct(String productId) {
+		ProductSpecification productSpecification = new ProductSpecification();
+		productSpecification.setLifeCycleStatus("Archived");
+		System.out.println("Product Specification: " + productSpecification.toString() + "\n\n\n");
+		System.out.println("Updating product Specification: ...\n\n");
+		WebTarget webTargetUpdateProduct = client.target(
+				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService/productSpecification")
+				.path(productId);
+		Invocation.Builder invocationBuilder = webTargetUpdateProduct.request(MediaType.APPLICATION_JSON)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer usman");
+		invocationBuilder.put(Entity.entity(productSpecification, MediaType.APPLICATION_JSON));
+		System.out.println("Successfully deleted Product");
+		System.out.println("\n\t\tRequest End");
+		System.out.println("*************************************************");
+		return Response.status(Response.Status.OK).entity("Successfully deleted Product").build();
+	}
+
 }

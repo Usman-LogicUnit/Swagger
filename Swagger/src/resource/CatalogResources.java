@@ -23,14 +23,14 @@ public class CatalogResources {
 	CatalogDao catalogDao = new CatalogDao();
 
 	@POST
-	@ApiOperation(value = "Create a catalog", notes = "Add a new Catalog in Product Catalog", response = Catalog.class)
+	@ApiOperation(value = "Create a catalog", notes = "Add a new Catalog in Product Catalog")
 	public Response AddCatalog(Catalog catalogObject) {
 		return catalogDao.newCatalog(catalogObject);
 	}
 
 	@GET
 	@Path("/{catalogId}")
-	@ApiOperation(value = "Catalog detail", notes = "Catalog along with all categories included in cataog", response = Catalog.class, responseContainer = "List")
+	@ApiOperation(value = "Catalog detail", notes = "Catalog along with all categories included in cataog", responseContainer = "List")
 	public Response GetCatalog(@PathParam("catalogId") String catalogId) {
 		return catalogDao.getCatalogById(catalogId);
 	}

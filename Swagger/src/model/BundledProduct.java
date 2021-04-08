@@ -2,13 +2,13 @@ package model;
 
 import javax.xml.bind.annotation.XmlElement;
 
-public class BundledProductSpecification {
+public class BundledProduct {
 	String POID, id, name, barCode, unitOfMeasureId;
 	int quantity;
 	@XmlElement(name = "ProductSpecification_Id")
 	String ProductSpecification_Id;
 
-	public BundledProductSpecification() {
+	public BundledProduct() {
 		super();
 		// TODO Auto-generated constructor stub
 	}

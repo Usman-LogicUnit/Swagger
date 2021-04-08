@@ -2,15 +2,15 @@ package model;
 
 import javax.xml.bind.annotation.XmlElement;
 
-public class ProductSpecificationRef {
-	String POID, id, name, description, conversionFactor, productSerialNumber;
+public class ProductRef {
+	String POID, id, name;
 	@XmlElement(name = "ProductOffering_Id")
 	String ProductOffering_Id;
 
 	@XmlElement(name = "Product_Id")
 	String Product_Id;
 
-	public ProductSpecificationRef() {
+	public ProductRef() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
@@ -39,30 +39,6 @@ public class ProductSpecificationRef {
 		this.name = name;
 	}
 
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public String getConversionFactor() {
-		return conversionFactor;
-	}
-
-	public void setConversionFactor(String conversionFactor) {
-		this.conversionFactor = conversionFactor;
-	}
-
-	public String getProductSerialNumber() {
-		return productSerialNumber;
-	}
-
-	public void setProductSerialNumber(String productSerialNumber) {
-		this.productSerialNumber = productSerialNumber;
-	}
-
 	@XmlElement(name = "ProductOffering_Id")
 	public String getProductOffering_Id() {
 		return ProductOffering_Id;
@@ -85,10 +61,8 @@ public class ProductSpecificationRef {
 
 	@Override
 	public String toString() {
-		return "ProductSpecificationRef [POID=" + POID + ", id=" + id + ", name=" + name + ", description="
-				+ description + ", conversionFactor=" + conversionFactor + ", productSerialNumber="
-				+ productSerialNumber + ", ProductOffering_Id=" + ProductOffering_Id + ", Product_Id=" + Product_Id
-				+ "]";
+		return "ProductRef [POID=" + POID + ", id=" + id + ", name=" + name + ", ProductOffering_Id="
+				+ ProductOffering_Id + ", Product_Id=" + Product_Id + "]";
 	}
 
 }

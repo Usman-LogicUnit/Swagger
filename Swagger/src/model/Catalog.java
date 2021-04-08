@@ -2,9 +2,13 @@ package model;
 
 import java.util.List;
 
+import io.swagger.annotations.ApiModelProperty;
+
 public class Catalog {
 	String id, POID, name, type;
+	@ApiModelProperty(position = 1, hidden=true, notes = "catalog valid for")
 	TimePeriod validFor;
+	@ApiModelProperty(position = 1, hidden=true, notes = "category ref to catalog")
 	List<CategoryRef> categories;
 
 	public Catalog() {

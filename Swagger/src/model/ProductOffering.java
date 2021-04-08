@@ -7,9 +7,9 @@ import javax.xml.bind.annotation.XmlElement;
 public class ProductOffering {
 	String POID, id, name, description;
 	TimePeriod validFor;
-	List<ProductSpecificationRef> productSpecifications;
+	List<ProductRef> productSpecifications;
 	List<ProductOfferingPrice> productOfferingPrices;
-	List<ProductSpecCharacteristicRef> productSpecCharacteristicRefs;
+	List<OptionRef> productSpecCharacteristicRefs;
 	@XmlElement(name = "Category_Id")
 	String Category_Id;
 	boolean isBundle;
@@ -59,11 +59,11 @@ public class ProductOffering {
 		this.validFor = validFor;
 	}
 
-	public List<ProductSpecificationRef> getProductSpecifications() {
+	public List<ProductRef> getProductSpecifications() {
 		return productSpecifications;
 	}
 
-	public void setProductSpecifications(List<ProductSpecificationRef> productSpecifications) {
+	public void setProductSpecifications(List<ProductRef> productSpecifications) {
 		this.productSpecifications = productSpecifications;
 	}
 
@@ -75,11 +75,11 @@ public class ProductOffering {
 		this.productOfferingPrices = productOfferingPrices;
 	}
 
-	public List<ProductSpecCharacteristicRef> getProductSpecCharacteristicRefs() {
+	public List<OptionRef> getProductSpecCharacteristicRefs() {
 		return productSpecCharacteristicRefs;
 	}
 
-	public void setProductSpecCharacteristicRefs(List<ProductSpecCharacteristicRef> productSpecCharacteristicRefs) {
+	public void setProductSpecCharacteristicRefs(List<OptionRef> productSpecCharacteristicRefs) {
 		this.productSpecCharacteristicRefs = productSpecCharacteristicRefs;
 	}
 

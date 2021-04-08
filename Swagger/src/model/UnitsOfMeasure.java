@@ -3,7 +3,7 @@ package model;
 import javax.xml.bind.annotation.XmlElement;
 
 public class UnitsOfMeasure {
-	String name, relation, POID, href, id;
+	String name, relation, POID, id;
 	int conversionFactor;
 	@XmlElement(name = "isDefault")
 	boolean isDefault;
@@ -12,7 +12,6 @@ public class UnitsOfMeasure {
 
 	public UnitsOfMeasure() {
 		super();
-		// TODO Auto-generated constructor stub
 	}
 
 	@XmlElement(name = "ProductSpecification_Id")
@@ -75,19 +74,11 @@ public class UnitsOfMeasure {
 		this.conversionFactor = conversionFactor;
 	}
 
-	public String getHref() {
-		return href;
-	}
-
-	public void setHref(String href) {
-		this.href = href;
-	}
-
 	@Override
 	public String toString() {
-		return "UnitsOfMeasure [name=" + name + ", relation=" + relation + ", POID=" + POID + ", href=" + href + ", id="
-				+ id + ", conversionFactor=" + conversionFactor + ", isDefault=" + isDefault
-				+ ", ProductSpecification_Id=" + ProductSpecification_Id + "]";
+		return "UnitsOfMeasure [name=" + name + ", relation=" + relation + ", POID=" + POID + ", id=" + id
+				+ ", conversionFactor=" + conversionFactor + ", isDefault=" + isDefault + ", ProductSpecification_Id="
+				+ ProductSpecification_Id + "]";
 	}
 
 }
