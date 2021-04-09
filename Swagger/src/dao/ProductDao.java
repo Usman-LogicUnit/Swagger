@@ -33,6 +33,13 @@ import model.TimePeriod;
 import model.UnitsOfMeasure;
 
 public class ProductDao {
+	enum ProductStatus {
+		Active, Archived, Draft
+	};
+
+	enum UserRole {
+		Admin, Sales
+	}
 
 	public ProductDao() {
 		super();
@@ -255,7 +262,7 @@ public class ProductDao {
 				// Setting default unit of Measure to Product Offering Prices
 
 				if (dataObject.getPrice() > 0)
-					productOfferingPrice.setTaxIncludedAmountValue(dataObject.getPrice());
+					productOfferingPrice.setDutyFreeAmountValue(dataObject.getPrice());;
 
 				if (dataObject.getTaxRate() > 0)
 					productOfferingPrice.setTaxRate(dataObject.getTaxRate());
@@ -367,101 +374,65 @@ public class ProductDao {
 	}
 
 	// completed OK
-	public Response getAllProducts(int startingIndex, int size, String status) {
-		List<Product> products = new ArrayList<>();
-		Product product;
-		System.out.println("Requesting...\n\n");
-		WebTarget webTarget = client.target(
-				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
-				.path("/productSpecifications");
-		Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON)
-				.header(HttpHeaders.AUTHORIZATION, "Bearer usman");
-		Response response = invocationBuilder.get();
-		List<ProductSpecification> productSpecifications = null;
-		productSpecifications = response.readEntity(new GenericType<List<ProductSpecification>>() {
-		});
-		System.out.println("product Specifications: " + productSpecifications.size());
-		WebTarget webTargetForAllProductOfferings = client.target(
-				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
-				.path("/productOfferings");
-		Invocation.Builder invocationBuilderForAllOfferings = webTargetForAllProductOfferings
-				.request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer usman");
-		Response allOfferingsResponse = invocationBuilderForAllOfferings.get();
-		List<ProductOffering> productOfferings = null;
-		productOfferings = allOfferingsResponse.readEntity(new GenericType<List<ProductOffering>>() {
-		});
+	public Response getAllProducts(int startingIndex, int size, String status, String role) {
 
-		if (productSpecifications == null || productOfferings == null) {
-			String message = "Unable to fetch all products";
+		boolean validationStatus = false;
+		boolean validationUserRole = false;
+
+		List<ProductStatus> statusEnum = new ArrayList<>();
+		statusEnum.add(ProductStatus.Active);
+		statusEnum.add(ProductStatus.Archived);
+		statusEnum.add(ProductStatus.Draft);
+
+		List<UserRole> roleEnum = new ArrayList<>();
+		roleEnum.add(UserRole.Admin);
+		roleEnum.add(UserRole.Sales);
+
+		if (status == null)
+			status = ProductStatus.Active.toString();
+
+		if (role == null)
+			role = UserRole.Sales.toString();
+
+		System.out.println("query status: " + status);
+		System.out.println("query role: " + role + "\n\n");
+
+		for (ProductStatus productstatus : statusEnum) {
+			if (status.equals(productstatus.toString())) {
+				System.out.println("Matched valid status: " + productstatus);
+				validationStatus = true;
+			}
+		}
+
+		for (UserRole userRole : roleEnum) {
+			if (role.equals(userRole.toString())) {
+				System.out.println("Matched valid role:" + userRole);
+				validationUserRole = true;
+			}
+		}
+
+		if (validationStatus == false) {
+			System.out.println("invalid status type:" + status);
+			System.out.println("Please provide valid Status ");
 			System.out.println("\n\t\tRequest End");
 			System.out.println("*************************************************");
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(message).build();
-		} else if (productSpecifications.size() == 0) {
-			String message = "No products in Product Catalog";
+			return Response.status(Response.Status.BAD_REQUEST).entity("incorrect product status").build();
+
+		}
+		if (validationUserRole == false) {
+			System.out.println("invalid user role:" + role);
+			System.out.println("Please provide valid user role");
 			System.out.println("\n\t\tRequest End");
 			System.out.println("*************************************************");
-			return Response.status(Response.Status.ACCEPTED).entity(message).build();
+			return Response.status(Response.Status.BAD_REQUEST).entity("incorrect user role").build();
+
+		}
+		if (validationUserRole == true && role.equals(UserRole.Sales.toString())) {
+			Response response = filterByStatus(startingIndex, size, status);
+			return response;
 		} else {
-			if (startingIndex > productSpecifications.size()) {
-				System.out.println("Please provide valid Starting endpoint");
-				System.out.println("\n\t\tRequest End");
-				System.out.println("*************************************************");
-				return Response.status(Response.Status.BAD_REQUEST).entity("index size out of bound").build();
-			}
-			List<Product> paginatedList;
-
-			for (ProductSpecification productSpecification : productSpecifications) {
-				System.out.println("name:" + productSpecification.getName());
-				product = new Product();
-				product.setName(productSpecification.getName());
-				product.setDescription(productSpecification.getDescription());
-				product.setPOID(productSpecification.getPOID());
-				product.setId(productSpecification.getId());
-				product.setImageURL(productSpecification.getProductNumber());
-				product.setBundle(productSpecification.isBundle());
-				product.setUnitsOfMeasure(productSpecification.getUnitsOfMeasure());
-				product.setProductSpecCharacteristics(productSpecification.getProductSpecCharacteristics());
-				product.setBarCodes(productSpecification.getAvailableBarcodes());
-				product.setBundledProductSpecifications(productSpecification.getBundledProductSpecifications());
-				product.setStatus(productSpecification.getLifeCycleStatus());
-				String productOfferingId = productSpecification.getProductOfferings().get(0).getPOID();
-
-				for (ProductOffering productOffering : productOfferings) {
-					if (productOfferingId.equals(productOffering.getPOID())) {
-
-						product.setCategory_Id(productOffering.getCategory_Id());
-						product.setStartDate(productOffering.getValidFor().getStartDate());
-						product.setEndDate(productOffering.getValidFor().getEndDate());
-						ProductOfferingPrice tempProductOfferingPrice = new ProductOfferingPrice();
-						tempProductOfferingPrice = productOffering.getProductOfferingPrices().get(0);
-						product.setPrice(tempProductOfferingPrice.getDutyFreeAmountValue());
-						product.setTaxRate(tempProductOfferingPrice.getTaxRate());
-						System.out.println("Price: " + tempProductOfferingPrice.getDutyFreeAmountValue());
-						products.add(product);
-						break;
-					}
-				}
-			}
-			if (startingIndex > 0 && size > 0) {
-				startingIndex--;
-				if (startingIndex + size > productSpecifications.size()) {
-					int itemToRemove = (startingIndex + size) - productSpecifications.size();
-					size = size - itemToRemove;
-				}
-				paginatedList = products.subList(startingIndex, size + startingIndex);
-				System.out.println("size of list: " + paginatedList.size());
-				System.out.println("Successfully Fetched Products");
-				System.out.println("\n\t\tRequest End");
-				System.out.println("*************************************************");
-				return Response.status(200).entity(new GenericEntity<List<Product>>(paginatedList) {
-				}).build();
-			}
-			System.out.println("Number of Products: " + products.size());
-			System.out.println("Successfully Fetched all products");
-			System.out.println("\n\t\tRequest End");
-			System.out.println("*************************************************");
-			return Response.status(200).entity(new GenericEntity<List<Product>>(products) {
-			}).build();
+			Response response = withoutfilterByStatus(startingIndex, size);
+			return response;
 		}
 	}
 
@@ -794,7 +765,7 @@ public class ProductDao {
 			productSpecification.setAvailableBarcodes(product.getBarCodes());
 		}
 		if (product.getStatus() != null)
-			product.setStatus(productSpecification.getLifeCycleStatus());
+			productSpecification.setLifeCycleStatus(product.getStatus());
 		System.out.println("Product Specification: " + productSpecification.toString() + "\n\n\n");
 		System.out.println("Updating product Specification: ...\n\n");
 		WebTarget webTargetUpdateProduct = client.target(
@@ -861,4 +832,208 @@ public class ProductDao {
 		return Response.status(Response.Status.OK).entity("Successfully deleted Product").build();
 	}
 
+	// completed OK
+	public Response filterByStatus(int startingIndex, int size, String status) {
+		List<Product> products = new ArrayList<>();
+		Product product;
+		System.out.println("Requesting...\n\n");
+		WebTarget webTarget = client.target(
+				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
+				.path("/productSpecifications");
+		Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer usman");
+		Response response = invocationBuilder.get();
+		List<ProductSpecification> productSpecifications = null;
+		productSpecifications = response.readEntity(new GenericType<List<ProductSpecification>>() {
+		});
+		System.out.println("product Specifications: " + productSpecifications.size());
+		WebTarget webTargetForAllProductOfferings = client.target(
+				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
+				.path("/productOfferings");
+		Invocation.Builder invocationBuilderForAllOfferings = webTargetForAllProductOfferings
+				.request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer usman");
+		Response allOfferingsResponse = invocationBuilderForAllOfferings.get();
+		List<ProductOffering> productOfferings = null;
+		productOfferings = allOfferingsResponse.readEntity(new GenericType<List<ProductOffering>>() {
+		});
+
+		if (productSpecifications == null || productOfferings == null) {
+			String message = "Unable to fetch all products";
+			System.out.println("\n\t\tRequest End");
+			System.out.println("*************************************************");
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(message).build();
+		} else if (productSpecifications.size() == 0) {
+			String message = "No products in Product Catalog";
+			System.out.println("\n\t\tRequest End");
+			System.out.println("*************************************************");
+			return Response.status(Response.Status.ACCEPTED).entity(message).build();
+		} else {
+
+			List<Product> paginatedList;
+
+			for (ProductSpecification productSpecification : productSpecifications) {
+				if (productSpecification.getLifeCycleStatus().equals(status)) {
+					System.out.println("name:" + productSpecification.getName());
+					product = new Product();
+					product.setName(productSpecification.getName());
+					product.setDescription(productSpecification.getDescription());
+					product.setPOID(productSpecification.getPOID());
+					product.setId(productSpecification.getId());
+					product.setImageURL(productSpecification.getProductNumber());
+					product.setBundle(productSpecification.isBundle());
+					product.setUnitsOfMeasure(productSpecification.getUnitsOfMeasure());
+					product.setProductSpecCharacteristics(productSpecification.getProductSpecCharacteristics());
+					product.setBarCodes(productSpecification.getAvailableBarcodes());
+					product.setBundledProductSpecifications(productSpecification.getBundledProductSpecifications());
+					product.setStatus(productSpecification.getLifeCycleStatus());
+					String productOfferingId = productSpecification.getProductOfferings().get(0).getPOID();
+
+					for (ProductOffering productOffering : productOfferings) {
+						if (productOfferingId.equals(productOffering.getPOID())) {
+
+							product.setCategory_Id(productOffering.getCategory_Id());
+							product.setStartDate(productOffering.getValidFor().getStartDate());
+							product.setEndDate(productOffering.getValidFor().getEndDate());
+							ProductOfferingPrice tempProductOfferingPrice = new ProductOfferingPrice();
+							tempProductOfferingPrice = productOffering.getProductOfferingPrices().get(0);
+							product.setPrice(tempProductOfferingPrice.getDutyFreeAmountValue());
+							product.setTaxRate(tempProductOfferingPrice.getTaxRate());
+							System.out.println("Price: " + tempProductOfferingPrice.getDutyFreeAmountValue());
+							products.add(product);
+							break;
+						}
+					}
+				}
+			}
+			if (startingIndex > 0 && size > 0) {
+				startingIndex--;
+				if (startingIndex >= products.size()) {
+					System.out.println("Please provide valid Starting endpoint");
+					System.out.println("\n\t\tRequest End");
+					System.out.println("*************************************************");
+					return Response.status(Response.Status.BAD_REQUEST).entity("index size out of bound").build();
+				}
+				if (startingIndex + size > products.size()) {
+					int itemToRemove = (startingIndex + size) - products.size();
+					size = size - itemToRemove;
+				}
+				paginatedList = products.subList(startingIndex, size + startingIndex);
+				System.out.println("size of list: " + paginatedList.size());
+				System.out.println("Successfully Fetched Products");
+				System.out.println("\n\t\tRequest End");
+				System.out.println("*************************************************");
+				return Response.status(200).entity(new GenericEntity<List<Product>>(paginatedList) {
+				}).build();
+			}
+			System.out.println("Number of Products: " + products.size());
+			System.out.println("Successfully Fetched all products");
+			System.out.println("\n\t\tRequest End");
+			System.out.println("*************************************************");
+			return Response.status(200).entity(new GenericEntity<List<Product>>(products) {
+			}).build();
+		}
+
+	}
+
+	// completed OK
+	public Response withoutfilterByStatus(int startingIndex, int size) {
+
+		List<Product> products = new ArrayList<>();
+		Product product;
+		System.out.println("Requesting...\n\n");
+		WebTarget webTarget = client.target(
+				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
+				.path("/productSpecifications");
+		Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer usman");
+		Response response = invocationBuilder.get();
+		List<ProductSpecification> productSpecifications = null;
+		productSpecifications = response.readEntity(new GenericType<List<ProductSpecification>>() {
+		});
+		System.out.println("product Specifications: " + productSpecifications.size());
+		WebTarget webTargetForAllProductOfferings = client.target(
+				"http://localhost:8083/Apps/PMS/HULM/7b64206f-1435-438a-8b1c-42aee9d0cec3/ProductCatalogService")
+				.path("/productOfferings");
+		Invocation.Builder invocationBuilderForAllOfferings = webTargetForAllProductOfferings
+				.request(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, "Bearer usman");
+		Response allOfferingsResponse = invocationBuilderForAllOfferings.get();
+		List<ProductOffering> productOfferings = null;
+		productOfferings = allOfferingsResponse.readEntity(new GenericType<List<ProductOffering>>() {
+		});
+
+		if (productSpecifications == null || productOfferings == null) {
+			String message = "Unable to fetch all products";
+			System.out.println("\n\t\tRequest End");
+			System.out.println("*************************************************");
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(message).build();
+		} else if (productSpecifications.size() == 0) {
+			String message = "No products in Product Catalog";
+			System.out.println("\n\t\tRequest End");
+			System.out.println("*************************************************");
+			return Response.status(Response.Status.ACCEPTED).entity(message).build();
+		} else {
+
+			List<Product> paginatedList;
+
+			for (ProductSpecification productSpecification : productSpecifications) {
+				System.out.println("name:" + productSpecification.getName());
+				product = new Product();
+				product.setName(productSpecification.getName());
+				product.setDescription(productSpecification.getDescription());
+				product.setPOID(productSpecification.getPOID());
+				product.setId(productSpecification.getId());
+				product.setImageURL(productSpecification.getProductNumber());
+				product.setBundle(productSpecification.isBundle());
+				product.setUnitsOfMeasure(productSpecification.getUnitsOfMeasure());
+				product.setProductSpecCharacteristics(productSpecification.getProductSpecCharacteristics());
+				product.setBarCodes(productSpecification.getAvailableBarcodes());
+				product.setBundledProductSpecifications(productSpecification.getBundledProductSpecifications());
+				product.setStatus(productSpecification.getLifeCycleStatus());
+				String productOfferingId = productSpecification.getProductOfferings().get(0).getPOID();
+
+				for (ProductOffering productOffering : productOfferings) {
+					if (productOfferingId.equals(productOffering.getPOID())) {
+
+						product.setCategory_Id(productOffering.getCategory_Id());
+						product.setStartDate(productOffering.getValidFor().getStartDate());
+						product.setEndDate(productOffering.getValidFor().getEndDate());
+						ProductOfferingPrice tempProductOfferingPrice = new ProductOfferingPrice();
+						tempProductOfferingPrice = productOffering.getProductOfferingPrices().get(0);
+						product.setPrice(tempProductOfferingPrice.getDutyFreeAmountValue());
+						product.setTaxRate(tempProductOfferingPrice.getTaxRate());
+						System.out.println("Price: " + tempProductOfferingPrice.getDutyFreeAmountValue());
+						products.add(product);
+						break;
+					}
+				}
+			}
+			if (startingIndex > 0 && size > 0) {
+				startingIndex--;
+				if (startingIndex >= products.size()) {
+					System.out.println("Please provide valid Starting endpoint");
+					System.out.println("\n\t\tRequest End");
+					System.out.println("*************************************************");
+					return Response.status(Response.Status.BAD_REQUEST).entity("index size out of bound").build();
+				}
+				if (startingIndex + size > products.size()) {
+					int itemToRemove = (startingIndex + size) - products.size();
+					size = size - itemToRemove;
+				}
+				paginatedList = products.subList(startingIndex, size + startingIndex);
+				System.out.println("size of list: " + paginatedList.size());
+				System.out.println("Successfully Fetched Products");
+				System.out.println("\n\t\tRequest End");
+				System.out.println("*************************************************");
+				return Response.status(200).entity(new GenericEntity<List<Product>>(paginatedList) {
+				}).build();
+			}
+			System.out.println("Number of Products: " + products.size());
+			System.out.println("Successfully Fetched all products");
+			System.out.println("\n\t\tRequest End");
+			System.out.println("*************************************************");
+			return Response.status(200).entity(new GenericEntity<List<Product>>(products) {
+			}).build();
+		}
+
+	}
 }

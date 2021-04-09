@@ -35,12 +35,9 @@ public class ProductResources {
 	@GET
 	@ApiOperation(value = "Get all product", notes = "All products in Product Catalog")
 	public Response GetAllProducts(@QueryParam("start") int startIndex, @QueryParam("size") int size,
-			@QueryParam("status") String status) {
+			@QueryParam("status") String status, @QueryParam("role") String role) {
 		System.out.println("start: " + startIndex + "size: " + size + " status: " + status);
-		if (status == null)
-			status = "Active";
-		System.out.println("Hellowwwwww:  " + status);
-		return productDao.getAllProducts(startIndex, size,status);
+		return productDao.getAllProducts(startIndex, size, status, role);
 	}
 
 	@PUT
